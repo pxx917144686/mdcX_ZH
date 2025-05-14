@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var tweaks: [Tweak] = [
+    @State internal var tweaks: [Tweak] = [
         Tweak(name: "隐藏程序坞背景",
               description: "使程序坞背景透明。",
               longDescription: "这个调整通过清零程序坞背景材质文件来实现透明效果，适用于大多数iOS版本。修改后的程序坞将显示为完全透明，让壁纸可以完整显示。",
