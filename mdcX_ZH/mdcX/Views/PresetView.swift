@@ -518,3 +518,15 @@ struct SearchBar: View {
         .padding(.vertical, 5)
     }
 }
+
+extension ContentView {
+    public func publicGetTweaks() -> [Tweak] {
+        return tweaks
+    }
+}
+
+extension PresetManager {
+    public func publicColorToString(_ color: Color) -> String {
+        return colorToString(color)
+    }
+}
