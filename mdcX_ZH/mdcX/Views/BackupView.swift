@@ -148,7 +148,7 @@ struct BackupView: View {
     private func confirmRestoreBackup(_ backup: BackupManager.BackupItem) {
         alertItem = AlertItem(
             title: Text("确认恢复"),
-            message: Text("您确定要恢复来自"\(backup.name)"的\(backup.files.count)个文件吗？这将覆盖当前系统文件。"),
+            message: Text("您确定要恢复来自\"\(backup.name)\"的\(backup.files.count)个文件吗？这将覆盖当前系统文件。"),
             primaryButton: .destructive(Text("恢复")) {
                 restoreBackup(backup)
             },
