@@ -52,6 +52,7 @@ jobs:
       
       - name: Create Export Options Plist
         run: |
+          cd mdcX_ZH
           cat > exportOptions.plist << EOL
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -77,6 +78,7 @@ jobs:
       
       - name: Export IPA
         run: |
+          cd mdcX_ZH
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/mdcX.xcarchive \
             -exportOptionsPlist exportOptions.plist \
@@ -86,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: mdcX-app
-          path: ${{ runner.temp }}/build/mdcX.ipa
+          path: ${{ runner.temp }}/build/*.ipa
 
   check:
     name: Swift Syntax Check
