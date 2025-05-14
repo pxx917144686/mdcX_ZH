@@ -175,7 +175,7 @@ struct BackupView: View {
     private func confirmDeleteBackup(_ backup: BackupManager.BackupItem) {
         alertItem = AlertItem(
             title: Text("确认删除"),
-            message: Text("您确定要删除备份"\(backup.name)"吗？此操作不可撤销。"),
+            message: Text("您确定要删除备份\"\(backup.name)\"吗？此操作不可撤销。"),
             primaryButton: .destructive(Text("删除")) {
                 backupManager.deleteBackup(backup)
                 logStore.append(message: "已删除备份: \(backup.name)")
