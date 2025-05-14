@@ -142,7 +142,7 @@ struct PresetView: View {
         // 此处仅为演示，实际使用时需替换为真实数据源
         
         // 示例加载逻辑
-        let allTweaks = ContentView().tweaks // 这是理想情况，实际需根据程序架构调整
+        let allTweaks = ContentView().getTweaks() // 修改为调用公共方法
         
         for tweak in allTweaks {
             tweakStore[tweak.id] = tweak
@@ -174,7 +174,7 @@ struct PresetView: View {
             updatedPreset.name = presetName
             updatedPreset.description = presetDescription
             updatedPreset.tweakIds = selectedTweakIds
-            updatedPreset.color = presetManager.colorToString(presetColor)
+            updatedPreset.color = presetManager.publicColorToString(presetColor) // 修改为调用公共方法
             updatedPreset.icon = presetIcon
             
             presetManager.updatePreset(updatedPreset)
@@ -244,7 +244,7 @@ struct PresetView: View {
     private func confirmDeletePreset(_ preset: PresetManager.TweakPreset) {
         alertItem = AlertItem(
             title: Text("确认删除"),
-            message: Text("您确定要删除预设"\(preset.name)"吗？"),
+            message: Text("您确定要删除预设\"\(preset.name)\"吗？"),
             primaryButton: .destructive(Text("删除")) {
                 presetManager.deletePreset(preset)
                 logStore.append(message: "已删除预设: \(preset.name)")
