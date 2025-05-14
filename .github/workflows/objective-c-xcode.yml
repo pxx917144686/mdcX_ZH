@@ -1,33 +1,29 @@
-name: Swift Syntax Check Only
+name: iOS Build
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
+  
 jobs:
-  check:
-    name: Swift Syntax Check
+  build:
     runs-on: macos-latest
-
+    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
-      - name: Environment Info
-        run: |
-          swift --version
-          echo "Repository structure:"
-          find . -name "*.swift" | wc -l
-          echo "Swift files found."
-      
-      - name: Swift Syntax Check
-        run: |
-          # 简单语法检查而不是构建
-          find mdcX_ZH -name "*.swift" -print0 | xargs -0 -n1 swift -syntax-only || true
+      - name: Set up code signing
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.IOS_CERTIFICATES_P12 }}
+          p12-password: ${{ secrets.IOS_CERTIFICATES_P12_PASSWORD }}
           
-          # 项目兼容性说明
-          echo "基本语法检查完成。项目使用的Xcode格式版本(77)与当前CI环境不兼容。"
-          echo "需要使用兼容的Xcode版本重新创建项目文件，才能在CI环境中构建。"
-          exit 0
+      - name: Build and export IPA
+        run: |
+          xcodebuild archive -project mdcX_ZH/mdcX.xcodeproj -scheme mdcX -archivePath build/mdcX.xcarchive
+          xcodebuild -exportArchive -archivePath build/mdcX.xcarchive -exportPath build -exportOptionsPlist exportOptions.plist
+          
+      - name: Upload IPA
+        uses: actions/upload-artifact@v3
+        with:
+          name: mdcX-app
+          path: build/mdcX_ZH.ipa
