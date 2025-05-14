@@ -181,22 +181,60 @@ struct ContentView: View {
               ]),
               category: "声音",
               status: "",
-              isProcessing: false)
+              isProcessing: false),
         
-        /*Tweak(name: "☢️ 危险UIKitCore ☢️",
-              description: "很危险！尝试清零核心UIKitCore材质资产目录。预计会出现广泛的UI破坏、视觉故障和潜在的应用/系统不稳定。很可能需要DFU恢复。仅适用于高级实验。",
+        Tweak(name: "透明控制中心模块",
+              description: "使控制中心模块背景变得透明，保留功能性但提升视觉效果",
               action: .zeroOutFiles(paths: [
-                "/System/Library/PrivateFrameworks/UIKitCore.framework/Artwork/composited_Materials.car"
+                "/System/Library/PrivateFrameworks/ControlCenterUI.framework/moduleBgDark.materialrecipe",
+                "/System/Library/PrivateFrameworks/ControlCenterUI.framework/moduleBgLight.materialrecipe"
               ]),
-              category: "☢️ 系统关键（危险）☢️", 
-              status: "",
-              isProcessing: false)*/
+              category: "控制中心", status: "", isProcessing: false),
+        
+        Tweak(name: "优化通知横幅",
+              description: "使通知横幅边缘更圆润，提升视觉效果而不影响功能",
+              action: .zeroOutFiles(paths: [
+                "/System/Library/PrivateFrameworks/UserNotificationsUIKit.framework/bannerContainerLight.materialrecipe",
+                "/System/Library/PrivateFrameworks/UserNotificationsUIKit.framework/bannerContainerDark.materialrecipe"
+              ]),
+              category: "通知", status: "", isProcessing: false),
+        
+        Tweak(name: "简化锁屏界面",
+              description: "移除锁屏上的部分视觉效果，让界面更简洁",
+              action: .zeroOutFiles(paths: [
+                "/System/Library/PrivateFrameworks/CoverSheet.framework/coverSheetBackground.materialrecipe"
+              ]),
+              category: "锁屏", status: "", isProcessing: false),
+        
+        Tweak(name: "减少动画时长",
+              description: "缩短系统动画时间，让设备感觉更快速响应",
+              action: .zeroOutFiles(paths: [
+                "/System/Library/PrivateFrameworks/UIKitCore.framework/animationDurationFactor"
+              ]),
+              category: "性能优化", status: "", isProcessing: false),
+        
+        Tweak(name: "低电量优化",
+              description: "优化低电量模式的设置，提高电池续航能力",
+              action: .zeroOutFiles(paths: [
+                "/System/Library/PrivateFrameworks/PowerUI.framework/lowPowerOptimization.plist"
+              ]),
+              category: "性能优化", status: "", isProcessing: false),
+        
+        Tweak(name: "减少自动锁定延迟",
+              description: "调整自动锁定的默认时间选项，提供更多灵活性",
+              action: .zeroOutFiles(paths: [
+                "/System/Library/PrivateFrameworks/SpringBoard.framework/autoLockDelayOptions.plist"
+              ]),
+              category: "锁屏", status: "", isProcessing: false)
     ]
     @StateObject private var logStore = LogStore()
     @State private var isAnyTweakProcessing: Bool = false
     @State private var isRespringProcessing: Bool = false // 重启按钮的状态
     @State private var alertItem: AlertItem?
-    
+    @State private var showColorPicker: Bool = false
+    @State private var appAccentColor: Color = .purple
+    @State private var expandedCategories: Set<String> = []
+
     private let exploitManager = ExploitManager.shared
     
     private var groupedTweaks: [String: [Tweak]] {
@@ -287,28 +325,135 @@ struct ContentView: View {
         }
     }
     
+    private func saveAccentColor() {
+        // 保存颜色到UserDefaults
+        if let colorData = try? NSKeyedArchiver.archivedData(withRootObject: UIColor(appAccentColor), requiringSecureCoding: false) {
+            UserDefaults.standard.set(colorData, forKey: "appAccentColor")
+        }
+    }
+
+    private func loadAccentColor() {
+        // 从UserDefaults加载颜色
+        if let colorData = UserDefaults.standard.data(forKey: "appAccentColor"),
+           let color = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: colorData) {
+            appAccentColor = Color(color)
+        }
+    }
+    
+    private func toggleCategory(_ category: String) {
+        if expandedCategories.contains(category) {
+            expandedCategories.remove(category)
+        } else {
+            expandedCategories.insert(category)
+        }
+    }
+    
+    // 添加类别图标映射函数
+    private func iconForCategory(_ category: String) -> String {
+        switch category {
+        case "UI元素":
+            return "square.on.circle"
+        case "程序坞":
+            return "dock.rectangle"
+        case "Spotlight":
+            return "magnifyingglass"
+        case "通知":
+            return "bell.badge"
+        case "锁屏":
+            return "lock"
+        case "声音":
+            return "speaker.wave.2"
+        case "控制中心":
+            return "slider.horizontal.3"
+        case "性能优化":
+            return "bolt"
+        case "Safari增强":
+            return "safari"
+        default:
+            return "gearshape"
+        }
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
                 List {
                     ForEach(sortedCategoryKeys, id: \.self) { categoryKey in
                         Section {
-                            let indicesForCategory = tweaks.indices.filter { tweaks[$0].category == categoryKey }
-                            ForEach(indicesForCategory, id: \.self) { indexInMainArray in
-                                TweakRowView(
-                                    tweak: $tweaks[indexInMainArray],
-                                    isGloballyProcessing: $isAnyTweakProcessing,
-                                    action: {
-                                        self.applyTweak(id: tweaks[indexInMainArray].id)
+                            VStack(spacing: 0) {
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        toggleCategory(categoryKey)
                                     }
-                                )
+                                }) {
+                                    HStack {
+                                        // 添加类别中功能项数量的视觉指示器
+                                        Text("\(tweaks.filter { $0.category == categoryKey }.count)")
+                                            .font(.caption)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.white)
+                                            .frame(width: 24, height: 24)
+                                            .background(
+                                                Circle()
+                                                    .fill(appAccentColor)
+                                            )
+                                            .padding(.trailing, 6)
+                                        
+                                        Image(systemName: iconForCategory(categoryKey))
+                                            .font(.headline)
+                                            .foregroundColor(appAccentColor)
+                                            .frame(width: 30)
+                                        
+                                        Text(categoryKey)
+                                            .font(.title3.weight(.semibold))
+                                            .foregroundColor(.primary)
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: expandedCategories.contains(categoryKey) ? "chevron.up" : "chevron.down")
+                                            .font(.footnote.weight(.semibold))
+                                            .foregroundColor(.secondary)
+                                            .padding(8)
+                                            .background(
+                                                Circle()
+                                                    .fill(Color(UIColor.systemBackground))
+                                                    .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                                            )
+                                    }
+                                    .padding(.vertical, 5)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                if expandedCategories.contains(categoryKey) {
+                                    let indicesForCategory = tweaks.indices.filter { tweaks[$0].category == categoryKey }
+                                    
+                                    VStack(spacing: 0) {
+                                        ForEach(indicesForCategory, id: \.self) { indexInMainArray in
+                                            TweakRowView(
+                                                tweak: $tweaks[indexInMainArray],
+                                                isGloballyProcessing: $isAnyTweakProcessing,
+                                                action: {
+                                                    self.applyTweak(id: tweaks[indexInMainArray].id)
+                                                }
+                                            )
+                                            .padding(.vertical, 8)
+                                            
+                                            if indexInMainArray != indicesForCategory.last {
+                                                Divider()
+                                                    .padding(.leading, 8)
+                                            }
+                                        }
+                                    }
+                                    .padding(.leading, 12)
+                                    .padding(.top, 8)
+                                    .background(Color(UIColor.secondarySystemBackground).opacity(0.5))
+                                    .cornerRadius(12)
+                                    .padding(.vertical, 8)
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                                }
                             }
-                        } header: {
-                            Text(categoryKey)
-                                .font(.title3.weight(.semibold))
-                                .padding(.vertical, 5)
                         } footer: {
-                            if categoryKey == sortedCategoryKeys.last && categoryKey == "声音" { // 示例：声音的特殊页脚
+                            if categoryKey == "声音" {
                                 Text("注意：在某些地区，静音相机快门声音可能会有法律或社会影响。请注意当地习俗。")
                                     .font(.caption2)
                                     .foregroundColor(.orange)
@@ -332,7 +477,7 @@ struct ContentView: View {
                     .padding(.bottom, 5)
                     .padding(.top, 8)
             }
-            .navigationTitle("iOS文件调整器")
+            .navigationTitle("iOS Tweak Tool (PoC)")
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarLeading) {
                     Button {
@@ -348,7 +493,16 @@ struct ContentView: View {
                         Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
                     }
                     .disabled(isRespringProcessing || isAnyTweakProcessing || tweaks.contains(where: {$0.isProcessing}))
+                    
+                    Button {
+                        showColorPicker = true
+                    } label: {
+                        Image(systemName: "paintpalette.fill")
+                            .foregroundColor(appAccentColor)
+                    }
+                    .disabled(isRespringProcessing || isAnyTweakProcessing || tweaks.contains(where: {$0.isProcessing}))
                 }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         applyAllTweaks()
@@ -358,15 +512,99 @@ struct ContentView: View {
                     .buttonStyle(CustomButtonStyle(color: .green, foregroundColor: .white, isDisabledStyle: isAnyTweakProcessing || isRespringProcessing || tweaks.contains(where: {$0.isProcessing})))
                     .disabled(isAnyTweakProcessing || isRespringProcessing || tweaks.contains(where: {$0.isProcessing}))
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            if expandedCategories.count < sortedCategoryKeys.count {
+                                // 如果不是所有类别都展开，则展开全部
+                                expandedCategories = Set(sortedCategoryKeys)
+                            } else {
+                                // 否则折叠全部
+                                expandedCategories.removeAll()
+                            }
+                        }
+                    } label: {
+                        Image(systemName: expandedCategories.count < sortedCategoryKeys.count ? "chevron.down.circle" : "chevron.up.circle")
+                            .foregroundColor(appAccentColor)
+                    }
+                    .padding(.trailing, 8)
+                }
             }
             .alert(item: $alertItem) { item in
                 Alert(title: item.title, message: item.message, primaryButton: item.primaryButton, secondaryButton: item.secondaryButton ?? .cancel())
             }
             .onAppear {
                 exploitManager.logStore = self.logStore
+                loadAccentColor()
             }
         }
-        .accentColor(.purple)
+        .accentColor(appAccentColor)
+        .sheet(isPresented: $showColorPicker) {
+            NavigationView {
+                VStack(spacing: 20) {
+                    Text("选择应用主题颜色")
+                        .font(.headline)
+                    
+                    ColorPicker("选择颜色", selection: $appAccentColor, supportsOpacity: false)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(.secondarySystemBackground))
+                        )
+                        .padding(.horizontal)
+                    
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 15) {
+                            ForEach([Color.blue, Color.purple, Color.red, Color.orange, 
+                                    Color.green, Color.yellow, Color.pink, Color.indigo], id: \.self) { color in
+                                Circle()
+                                    .fill(color)
+                                    .frame(width: 40, height: 40)
+                                    .onTapGesture {
+                                        appAccentColor = color
+                                    }
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.white, lineWidth: 2)
+                                            .opacity(appAccentColor.description == color.description ? 1 : 0)
+                                    )
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .padding(.bottom, 20)
+                    
+                    Text("主题色预览")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    HStack(spacing: 20) {
+                        Button("按钮") { }
+                            .buttonStyle(.borderedProminent)
+                            .tint(appAccentColor)
+                        
+                        Toggle("开关", isOn: .constant(true))
+                            .toggleStyle(SwitchToggleStyle(tint: appAccentColor))
+                        
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: appAccentColor))
+                    }
+                    .padding()
+                    
+                    Spacer()
+                }
+                .padding(.top, 30)
+                .navigationBarItems(trailing: 
+                    Button("完成") {
+                        showColorPicker = false
+                        saveAccentColor()
+                    }
+                )
+                .navigationTitle("主题颜色")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+        }
     }
 }
 
