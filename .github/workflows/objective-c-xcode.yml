@@ -14,16 +14,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set Default Scheme
+      
+      - name: List directory structure
         run: |
-          scheme_list=$(xcodebuild -list -json | tr -d "\n")
-          default=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
-          echo $default | cat >default
-          echo Using default scheme: $default
-      - name: Install the Apple certificate and provisioning profile
-        run: |
-          # 为CI环境配置临时证书或使用自动签名
-          xcodebuild -project mdcX_ZH/mdcX.xcodeproj -scheme mdcX -configuration Debug -allowProvisioningUpdates build
+          ls -la
+          find . -name "*.xcodeproj" -type d
+      
       - name: Build
         run: |
-          xcodebuild build -project mdcX_ZH/mdcX.xcodeproj -scheme mdcX CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+          xcodebuild build -project mdcX_ZH/mdcX.xcodeproj -scheme mdcX CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0
