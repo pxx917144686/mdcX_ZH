@@ -20,6 +20,10 @@ jobs:
           ls -la
           find . -name "*.xcodeproj" -type d
       
-      - name: Build without scheme
+      - name: List available targets
         run: |
-          xcodebuild build -project mdcX_ZH/mdcX.xcodeproj -target mdcX CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0
+          xcodebuild -project mdcX_ZH/mdcX.xcodeproj -list
+      
+      - name: Build with absolute path
+        run: |
+          cd mdcX_ZH && xcodebuild -project mdcX.xcodeproj -target mdcX CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0
