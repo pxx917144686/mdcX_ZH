@@ -85,7 +85,7 @@ jobs:
             -exportPath $RUNNER_TEMP/build
       
       - name: Upload IPA
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # 从v3更新到v4
         with:
           name: mdcX-app
           path: ${{ runner.temp }}/build/*.ipa
