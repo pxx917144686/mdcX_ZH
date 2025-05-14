@@ -142,7 +142,7 @@ struct PresetView: View {
         // 此处仅为演示，实际使用时需替换为真实数据源
         
         // 示例加载逻辑
-        let allTweaks = ContentView().getTweaks() // 修改为调用公共方法
+        let allTweaks = ContentView().publicGetTweaks() // 修改为调用公共方法
         
         for tweak in allTweaks {
             tweakStore[tweak.id] = tweak
