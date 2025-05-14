@@ -433,7 +433,7 @@ struct ContentView: View {
             case .ios19Glass:
                 ZStack {
                     Color(.systemBackground).opacity(0.5)
-                    Color(appAccentColor).opacity(0.08)
+                    Color(uiColor: UIColor(appAccentColor)).opacity(0.08)
                     Color.clear
                         .background(.ultraThinMaterial)
                         .blur(radius: CGFloat(blurIntensity/3))
@@ -605,7 +605,7 @@ struct ContentView: View {
                         case .ios19Glass:
                             ZStack {
                                 Color(.systemBackground).opacity(0.5)
-                                Color(appAccentColor).opacity(0.08)
+                                Color(uiColor: UIColor(appAccentColor)).opacity(0.08)
                                 Color.clear
                                     .background(.ultraThinMaterial)
                                     .blur(radius: CGFloat(blurIntensity/3))
@@ -617,151 +617,7 @@ struct ContentView: View {
                         
                         // 内容
                         ScrollView {
-                            VStack(spacing: 24) {
-                                VStack(spacing: 10) {
-                                    Text("主题颜色")
-                                        .font(.headline)
-                                    
-                                    // 预设颜色选择
-                                    ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: 15) {
-                                            ForEach([Color.blue, Color.purple, Color.red, Color.orange, 
-                                                    Color.green, Color.yellow, Color.pink, Color.indigo], id: \.self) { color in
-                                                Circle()
-                                                    .fill(color)
-                                                    .frame(width: 40, height: 40)
-                                                    .onTapGesture {
-                                                        appAccentColor = color
-                                                    }
-                                                    .overlay(
-                                                        Circle()
-                                                            .stroke(Color.white, lineWidth: 2)
-                                                            .opacity(appAccentColor.description == color.description ? 1 : 0)
-                                                    )
-                                                    .shadow(color: color.opacity(0.3), radius: 3, x: 0, y: 2)
-                                            }
-                                        }
-                                        .padding(.horizontal)
-                                    }
-                                    
-                                    // 自定义颜色选择器
-                                    ColorPicker("自定义颜色", selection: $appAccentColor, supportsOpacity: false)
-                                        .padding()
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(Color(.secondarySystemBackground))
-                                        )
-                                        .padding(.horizontal)
-                                }
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(Color(.secondarySystemBackground).opacity(0.7))
-                                )
-                                .padding(.horizontal)
-                                
-                                // 背景样式选择
-                                VStack(spacing: 16) {
-                                    Text("背景样式")
-                                        .font(.headline)
-                                    
-                                    Picker("背景样式", selection: $backgroundStyle) {
-                                        ForEach(BackgroundStyle.allCases) { style in
-                                            Text(style.rawValue).tag(style)
-                                        }
-                                    }
-                                    .pickerStyle(SegmentedPickerStyle())
-                                    .padding(.horizontal)
-                                    
-                                    // 根据选择的背景样式显示相应的设置选项
-                                    if backgroundStyle == .glass || backgroundStyle == .ios19Glass {
-                                        VStack(alignment: .leading, spacing: 10) {
-                                            Text("毛玻璃效果强度: \(Int(blurIntensity))")
-                                                .font(.subheadline)
-                                            
-                                            Slider(value: $blurIntensity, in: 0...40, step: 1)
-                                                .accentColor(appAccentColor)
-                                        }
-                                        .padding(.horizontal)
-                                        .padding(.top, 5)
-                                    }
-                                    
-                                    if backgroundStyle == .custom {
-                                        ColorPicker("背景颜色", selection: $customBackgroundColor)
-                                            .padding()
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color(.tertiarySystemBackground))
-                                            )
-                                            .padding(.horizontal)
-                                    }
-                                }
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(Color(.secondarySystemBackground).opacity(0.7))
-                                )
-                                .padding(.horizontal)
-                                
-                                // 预览区域
-                                VStack(spacing: 16) {
-                                    Text("效果预览")
-                                        .font(.headline)
-                                    
-                                    // 按钮预览
-                                    VStack(spacing: 20) {
-                                        HStack(spacing: 20) {
-                                            Button("按钮") { }
-                                                .buttonStyle(.borderedProminent)
-                                                .tint(appAccentColor)
-                                            
-                                            Text("← 系统按钮样式")
-                                                .font(.callout)
-                                                .foregroundColor(.secondary)
-                                        }
-                                        
-                                        HStack(spacing: 20) {
-                                            Toggle("开关", isOn: .constant(true))
-                                                .toggleStyle(SwitchToggleStyle(tint: appAccentColor))
-                                            
-                                            Text("← 系统开关状态")
-                                                .font(.callout)
-                                                .foregroundColor(.secondary)
-                                        }
-                                        
-                                        HStack(spacing: 20) {
-                                            ProgressView()
-                                                .progressViewStyle(CircularProgressViewStyle(tint: appAccentColor))
-                                                .scaleEffect(1.2)
-                                            
-                                            Text("← 加载指示器")
-                                                .font(.callout)
-                                                .foregroundColor(.secondary)
-                                        }
-                                    }
-                                    .padding()
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color(.tertiarySystemBackground).opacity(0.7))
-                                    )
-                                    .padding(.horizontal)
-                                }
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(Color(.secondarySystemBackground).opacity(0.7))
-                                )
-                                .padding(.horizontal)
-                                
-                                Text("选择的设置将应用于整个应用。背景样式会立即生效，切换后可获得不同视觉效果。")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 30)
-                                    .padding(.top, 10)
-                            }
-                            .padding(.top, 20)
-                            .padding(.bottom, 40)
+                            colorSettingsContent
                         }
                     }
                     .navigationBarItems(trailing: 
@@ -776,6 +632,162 @@ struct ContentView: View {
             }
         }
     }
+}
+
+private var colorSettingsContent: some View {
+    VStack(spacing: 24) {
+        colorPickerSection
+        backgroundStyleSection
+        previewSection
+        
+        Text("选择的设置将应用于整个应用。背景样式会立即生效，切换后可获得不同视觉效果。")
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 30)
+            .padding(.top, 10)
+    }
+    .padding(.top, 20)
+    .padding(.bottom, 40)
+}
+
+private var colorPickerSection: some View {
+    VStack(spacing: 10) {
+        Text("主题颜色")
+            .font(.headline)
+        
+        colorPresetSelector
+        
+        ColorPicker("自定义颜色", selection: $appAccentColor, supportsOpacity: false)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.secondarySystemBackground))
+            )
+            .padding(.horizontal)
+    }
+    .padding()
+    .background(
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Color(.secondarySystemBackground).opacity(0.7))
+    )
+    .padding(.horizontal)
+}
+
+private var colorPresetSelector: some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 15) {
+            ForEach([Color.blue, Color.purple, Color.red, Color.orange, 
+                    Color.green, Color.yellow, Color.pink, Color.indigo], id: \.self) { color in
+                Circle()
+                    .fill(color)
+                    .frame(width: 40, height: 40)
+                    .onTapGesture {
+                        appAccentColor = color
+                    }
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white, lineWidth: 2)
+                            .opacity(appAccentColor.description == color.description ? 1 : 0)
+                    )
+                    .shadow(color: color.opacity(0.3), radius: 3, x: 0, y: 2)
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+private var backgroundStyleSection: some View {
+    VStack(spacing: 16) {
+        Text("背景样式")
+            .font(.headline)
+        
+        Picker("背景样式", selection: $backgroundStyle) {
+            ForEach(BackgroundStyle.allCases) { style in
+                Text(style.rawValue).tag(style)
+            }
+        }
+        .pickerStyle(SegmentedPickerStyle())
+        .padding(.horizontal)
+        
+        if backgroundStyle == .glass || backgroundStyle == .ios19Glass {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("毛玻璃效果强度: \(Int(blurIntensity))")
+                    .font(.subheadline)
+                
+                Slider(value: $blurIntensity, in: 0...40, step: 1)
+                    .accentColor(appAccentColor)
+            }
+            .padding(.horizontal)
+            .padding(.top, 5)
+        }
+        
+        if backgroundStyle == .custom {
+            ColorPicker("背景颜色", selection: $customBackgroundColor)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.tertiarySystemBackground))
+                )
+                .padding(.horizontal)
+        }
+    }
+    .padding()
+    .background(
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Color(.secondarySystemBackground).opacity(0.7))
+    )
+    .padding(.horizontal)
+}
+
+private var previewSection: some View {
+    VStack(spacing: 16) {
+        Text("效果预览")
+            .font(.headline)
+        
+        VStack(spacing: 20) {
+            HStack(spacing: 20) {
+                Button("按钮") { }
+                    .buttonStyle(.borderedProminent)
+                    .tint(appAccentColor)
+                
+                Text("← 系统按钮样式")
+                    .font(.callout)
+                    .foregroundColor(.secondary)
+            }
+            
+            HStack(spacing: 20) {
+                Toggle("开关", isOn: .constant(true))
+                    .toggleStyle(SwitchToggleStyle(tint: appAccentColor))
+                
+                Text("← 系统开关状态")
+                    .font(.callout)
+                    .foregroundColor(.secondary)
+            }
+            
+            HStack(spacing: 20) {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: appAccentColor))
+                    .scaleEffect(1.2)
+                
+                Text("← 加载指示器")
+                    .font(.callout)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.tertiarySystemBackground).opacity(0.7))
+        )
+        .padding(.horizontal)
+    }
+    .padding()
+    .background(
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Color(.secondarySystemBackground).opacity(0.7))
+    )
+    .padding(.horizontal)
 }
 
 enum BackgroundStyle: String, CaseIterable, Identifiable {
