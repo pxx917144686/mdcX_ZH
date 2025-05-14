@@ -112,8 +112,6 @@ struct SettingsView: View {
     }
     
     private func resetAllSettings() {
-        let defaultSettings = AppSettings.shared
-        
         settings.showStatusInTweakRow = true
         settings.autoBackupBeforeTweak = true
         settings.defaultSortOrder = .category
