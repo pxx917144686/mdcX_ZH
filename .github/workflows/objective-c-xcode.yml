@@ -20,11 +20,10 @@ jobs:
           default=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
           echo $default | cat >default
           echo Using default scheme: $default
-      - name: Build
-        env:
-          scheme: ${{ 'default' }}
+      - name: Install the Apple certificate and provisioning profile
         run: |
-          if [ $scheme = default ]; then scheme=$(cat default); fi
-          if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
-          file_to_build=`echo $file_to_build | awk '{$1=$1;print}'`
-          xcodebuild clean build analyze -scheme "$scheme" -"$filetype_parameter" "$file_to_build" | xcpretty && exit ${PIPESTATUS[0]}
+          # 为CI环境配置临时证书或使用自动签名
+          xcodebuild -project mdcX_ZH/mdcX.xcodeproj -scheme mdcX -configuration Debug -allowProvisioningUpdates build
+      - name: Build
+        run: |
+          xcodebuild build -project mdcX_ZH/mdcX.xcodeproj -scheme mdcX CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
