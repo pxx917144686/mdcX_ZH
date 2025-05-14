@@ -59,11 +59,33 @@ jobs:
           cd $RUNNER_TEMP/build
           zip -r mdcX.ipa Payload
       
-      - name: 上传IPA
+      - name: 上传IPA作为工作流产物
         uses: actions/upload-artifact@v4
         with:
           name: mdcX-未签名应用
           path: ${{ runner.temp }}/build/mdcX.ipa
+          
+      - name: 获取当前日期
+        id: date
+        run: echo "date=$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
+        
+      - name: 创建Release
+        if: github.event_name != 'pull_request' # 只在推送到主分支或手动触发时创建Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: build-${{ steps.date.outputs.date }}
+          name: 自动构建 ${{ steps.date.outputs.date }}
+          body: |
+            mdcX自动构建版本
+            
+            构建时间: ${{ steps.date.outputs.date }}
+            未签名IPA文件，需要自行签名后安装。
+          draft: false
+          prerelease: true
+          files: ${{ runner.temp }}/build/mdcX.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   check:
     name: Swift语法检查
