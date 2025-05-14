@@ -83,7 +83,7 @@ class PresetManager: ObservableObject {
     }
     
     // 辅助方法，将Color转换为可存储的字符串
-    private func colorToString(_ color: Color) -> String {
+    internal func colorToString(_ color: Color) -> String {
         // 简化实现，使用预定义颜色名称
         if color == .red { return "red" }
         if color == .blue { return "blue" }
