@@ -20,6 +20,10 @@ jobs:
           ls -la
           find . -name "*.xcodeproj" -type d
       
+      - name: List available schemes
+        run: |
+          xcodebuild -project mdcX_ZH/mdcX.xcodeproj -list
+      
       - name: Build
         run: |
-          xcodebuild build -project mdcX_ZH/mdcX.xcodeproj -scheme mdcX CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0
+          xcodebuild build -project mdcX_ZH/mdcX.xcodeproj -scheme mdcX CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 || xcodebuild build -project mdcX_ZH/mdcX.xcodeproj -alltargets CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0
