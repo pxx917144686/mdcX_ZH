@@ -15,12 +15,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: List directory structure
+      - name: List directory structure & Xcode version
         run: |
           ls -la
           find . -name "*.xcodeproj" -type d
+          xcodebuild -version
       
-      - name: Attempt direct build
+      - name: List available schemes and targets
         run: |
           cd mdcX_ZH
-          xcodebuild build -project mdcX.xcodeproj CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 -configuration Debug
+          xcodebuild -project mdcX.xcodeproj -list
+      
+      - name: Attempt build with target
+        run: |
+          cd mdcX_ZH
+          xcodebuild build -project mdcX.xcodeproj -target mdcX CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 -configuration Debug
