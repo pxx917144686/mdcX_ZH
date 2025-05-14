@@ -1,4 +1,4 @@
-name: Xcode - Build and Analyze
+name: Basic Build
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build and analyse default scheme using xcodebuild command
+    name: Basic Build Attempt
     runs-on: macos-latest
 
     steps:
@@ -20,10 +20,7 @@ jobs:
           ls -la
           find . -name "*.xcodeproj" -type d
       
-      - name: List available targets
+      - name: Attempt direct build
         run: |
-          xcodebuild -project mdcX_ZH/mdcX.xcodeproj -list
-      
-      - name: Build with absolute path
-        run: |
-          cd mdcX_ZH && xcodebuild -project mdcX.xcodeproj -target mdcX CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0
+          cd mdcX_ZH
+          xcodebuild build -project mdcX.xcodeproj CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET=16.0 -configuration Debug
