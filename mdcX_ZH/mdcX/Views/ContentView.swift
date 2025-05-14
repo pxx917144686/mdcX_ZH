@@ -656,23 +656,6 @@ struct CategoryButton: View {
     }
 }
 
-struct CustomButtonStyle: ButtonStyle {
-    var color: Color
-    var foregroundColor: Color = .white
-    var isDisabledStyle: Bool = false
-    
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(isDisabledStyle ? Color.gray.opacity(0.5) : color.opacity(configuration.isPressed ? 0.7 : 1))
-            .foregroundColor(foregroundColor)
-            .cornerRadius(8)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-    }
-}
-
 #Preview {
     ContentView()
 }
