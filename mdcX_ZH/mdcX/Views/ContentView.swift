@@ -233,6 +233,10 @@ struct ContentView: View {
     @State private var alertItem: AlertItem?
     @State private var showColorPicker: Bool = false
     @State private var appAccentColor: Color = .purple
+    @State private var useGlassBackground: Bool = false // 是否使用毛玻璃背景
+    @State private var backgroundStyle: BackgroundStyle = .default // 背景样式
+    @State private var customBackgroundColor: Color = .blue.opacity(0.2) // 自定义背景颜色
+    @State private var blurIntensity: Double = 20 // 毛玻璃效果强度
     @State private var expandedCategories: Set<String> = []
 
     private let exploitManager = ExploitManager.shared
@@ -332,11 +336,49 @@ struct ContentView: View {
         }
     }
 
+    private func saveThemeSettings() {
+        // 保存颜色到UserDefaults
+        if let colorData = try? NSKeyedArchiver.archivedData(withRootObject: UIColor(appAccentColor), requiringSecureCoding: false) {
+            UserDefaults.standard.set(colorData, forKey: "appAccentColor")
+        }
+        
+        // 保存背景样式设置
+        UserDefaults.standard.set(backgroundStyle.rawValue, forKey: "backgroundStyle")
+        UserDefaults.standard.set(useGlassBackground, forKey: "useGlassBackground")
+        UserDefaults.standard.set(blurIntensity, forKey: "blurIntensity")
+        
+        if let bgColorData = try? NSKeyedArchiver.archivedData(withRootObject: UIColor(customBackgroundColor), requiringSecureCoding: false) {
+            UserDefaults.standard.set(bgColorData, forKey: "customBackgroundColor")
+        }
+    }
+
     private func loadAccentColor() {
         // 从UserDefaults加载颜色
         if let colorData = UserDefaults.standard.data(forKey: "appAccentColor"),
            let color = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: colorData) {
             appAccentColor = Color(color)
+        }
+    }
+    
+    private func loadThemeSettings() {
+        // 加载颜色
+        if let colorData = UserDefaults.standard.data(forKey: "appAccentColor"),
+           let color = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: colorData) {
+            appAccentColor = Color(color)
+        }
+        
+        // 加载背景样式设置
+        if let styleString = UserDefaults.standard.string(forKey: "backgroundStyle"),
+           let style = BackgroundStyle(rawValue: styleString) {
+            backgroundStyle = style
+        }
+        
+        useGlassBackground = UserDefaults.standard.bool(forKey: "useGlassBackground")
+        blurIntensity = UserDefaults.standard.double(forKey: "blurIntensity")
+        
+        if let bgColorData = UserDefaults.standard.data(forKey: "customBackgroundColor"),
+           let bgColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: bgColorData) {
+            customBackgroundColor = Color(bgColor)
         }
     }
     
@@ -374,238 +416,375 @@ struct ContentView: View {
         }
     }
     
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                List {
-                    ForEach(sortedCategoryKeys, id: \.self) { categoryKey in
-                        Section {
-                            VStack(spacing: 0) {
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        toggleCategory(categoryKey)
-                                    }
-                                }) {
-                                    HStack {
-                                        // 添加类别中功能项数量的视觉指示器
-                                        Text("\(tweaks.filter { $0.category == categoryKey }.count)")
-                                            .font(.caption)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.white)
-                                            .frame(width: 24, height: 24)
-                                            .background(
-                                                Circle()
-                                                    .fill(appAccentColor)
-                                            )
-                                            .padding(.trailing, 6)
-                                        
-                                        Image(systemName: iconForCategory(categoryKey))
-                                            .font(.headline)
-                                            .foregroundColor(appAccentColor)
-                                            .frame(width: 30)
-                                        
-                                        Text(categoryKey)
-                                            .font(.title3.weight(.semibold))
-                                            .foregroundColor(.primary)
-                                        
-                                        Spacer()
-                                        
-                                        Image(systemName: expandedCategories.contains(categoryKey) ? "chevron.up" : "chevron.down")
-                                            .font(.footnote.weight(.semibold))
-                                            .foregroundColor(.secondary)
-                                            .padding(8)
-                                            .background(
-                                                Circle()
-                                                    .fill(Color(UIColor.systemBackground))
-                                                    .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                                            )
-                                    }
-                                    .padding(.vertical, 5)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                if expandedCategories.contains(categoryKey) {
-                                    let indicesForCategory = tweaks.indices.filter { tweaks[$0].category == categoryKey }
-                                    
-                                    VStack(spacing: 0) {
-                                        ForEach(indicesForCategory, id: \.self) { indexInMainArray in
-                                            TweakRowView(
-                                                tweak: $tweaks[indexInMainArray],
-                                                isGloballyProcessing: $isAnyTweakProcessing,
-                                                action: {
-                                                    self.applyTweak(id: tweaks[indexInMainArray].id)
-                                                }
-                                            )
-                                            .padding(.vertical, 8)
-                                            
-                                            if indexInMainArray != indicesForCategory.last {
-                                                Divider()
-                                                    .padding(.leading, 8)
-                                            }
-                                        }
-                                    }
-                                    .padding(.leading, 12)
-                                    .padding(.top, 8)
-                                    .background(Color(UIColor.secondarySystemBackground).opacity(0.5))
-                                    .cornerRadius(12)
-                                    .padding(.vertical, 8)
-                                    .transition(.move(edge: .top).combined(with: .opacity))
-                                }
-                            }
-                        } footer: {
-                            if categoryKey == "声音" {
-                                Text("注意：在某些地区，静音相机快门声音可能会有法律或社会影响。请注意当地习俗。")
-                                    .font(.caption2)
-                                    .foregroundColor(.orange)
-                                    .padding(.vertical, 5)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            if categoryKey == sortedCategoryKeys.last {
-                                Text("更改生效需要手动重启/重新开机。请谨慎使用。")
-                                    .font(.caption2)
-                                    .foregroundColor(.gray)
-                                    .padding(.vertical, 10)
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                            }
-                        }
-                    }
+    var backgroundView: some View {
+        Group {
+            switch backgroundStyle {
+            case .default:
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+            case .glass:
+                ZStack {
+                    Color(.systemBackground).opacity(0.6)
+                        .blur(radius: CGFloat(blurIntensity))
+                    Color.clear
+                        .background(.ultraThinMaterial)
                 }
-                .listStyle(.insetGrouped)
-                
-                LogView(logMessages: $logStore.messages, logStore: logStore)
-                    .padding(.horizontal)
-                    .padding(.bottom, 5)
-                    .padding(.top, 8)
-            }
-            .navigationTitle("iOS Tweak Tool (PoC)")
-            .toolbar {
-                ToolbarItemGroup(placement: .navigationBarLeading) {
-                    Button {
-                        self.alertItem = AlertItem(
-                            title: Text("确认重启"),
-                            message: Text("这将尝试使用CFNotification进行重启。它可能不适用于所有iOS版本。继续？"),
-                            primaryButton: .destructive(Text("尝试重启")) {
-                                triggerCFNotificationRespring()
-                            },
-                            secondaryButton: .cancel()
-                        )
-                    } label: {
-                        Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
-                    }
-                    .disabled(isRespringProcessing || isAnyTweakProcessing || tweaks.contains(where: {$0.isProcessing}))
-                    
-                    Button {
-                        showColorPicker = true
-                    } label: {
-                        Image(systemName: "paintpalette.fill")
-                            .foregroundColor(appAccentColor)
-                    }
-                    .disabled(isRespringProcessing || isAnyTweakProcessing || tweaks.contains(where: {$0.isProcessing}))
+                .ignoresSafeArea()
+            case .ios19Glass:
+                ZStack {
+                    Color(.systemBackground).opacity(0.5)
+                    Color(appAccentColor).opacity(0.08)
+                    Color.clear
+                        .background(.ultraThinMaterial)
+                        .blur(radius: CGFloat(blurIntensity/3))
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        applyAllTweaks()
-                    } label: {
-                        Text("应用全部")
-                    }
-                    .buttonStyle(CustomButtonStyle(color: .green, foregroundColor: .white, isDisabledStyle: isAnyTweakProcessing || isRespringProcessing || tweaks.contains(where: {$0.isProcessing})))
-                    .disabled(isAnyTweakProcessing || isRespringProcessing || tweaks.contains(where: {$0.isProcessing}))
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                            if expandedCategories.count < sortedCategoryKeys.count {
-                                // 如果不是所有类别都展开，则展开全部
-                                expandedCategories = Set(sortedCategoryKeys)
-                            } else {
-                                // 否则折叠全部
-                                expandedCategories.removeAll()
-                            }
-                        }
-                    } label: {
-                        Image(systemName: expandedCategories.count < sortedCategoryKeys.count ? "chevron.down.circle" : "chevron.up.circle")
-                            .foregroundColor(appAccentColor)
-                    }
-                    .padding(.trailing, 8)
-                }
-            }
-            .alert(item: $alertItem) { item in
-                Alert(title: item.title, message: item.message, primaryButton: item.primaryButton, secondaryButton: item.secondaryButton ?? .cancel())
-            }
-            .onAppear {
-                exploitManager.logStore = self.logStore
-                loadAccentColor()
-            }
-        }
-        .accentColor(appAccentColor)
-        .sheet(isPresented: $showColorPicker) {
-            NavigationView {
-                VStack(spacing: 20) {
-                    Text("选择应用主题颜色")
-                        .font(.headline)
-                    
-                    ColorPicker("选择颜色", selection: $appAccentColor, supportsOpacity: false)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(.secondarySystemBackground))
-                        )
-                        .padding(.horizontal)
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 15) {
-                            ForEach([Color.blue, Color.purple, Color.red, Color.orange, 
-                                    Color.green, Color.yellow, Color.pink, Color.indigo], id: \.self) { color in
-                                Circle()
-                                    .fill(color)
-                                    .frame(width: 40, height: 40)
-                                    .onTapGesture {
-                                        appAccentColor = color
-                                    }
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.white, lineWidth: 2)
-                                            .opacity(appAccentColor.description == color.description ? 1 : 0)
-                                    )
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-                    .padding(.bottom, 20)
-                    
-                    Text("主题色预览")
-                        .font(.headline)
-                        .padding(.top)
-                    
-                    HStack(spacing: 20) {
-                        Button("按钮") { }
-                            .buttonStyle(.borderedProminent)
-                            .tint(appAccentColor)
-                        
-                        Toggle("开关", isOn: .constant(true))
-                            .toggleStyle(SwitchToggleStyle(tint: appAccentColor))
-                        
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: appAccentColor))
-                    }
-                    .padding()
-                    
-                    Spacer()
-                }
-                .padding(.top, 30)
-                .navigationBarItems(trailing: 
-                    Button("完成") {
-                        showColorPicker = false
-                        saveAccentColor()
-                    }
-                )
-                .navigationTitle("主题颜色")
-                .navigationBarTitleDisplayMode(.inline)
+                .ignoresSafeArea()
+            case .custom:
+                customBackgroundColor
+                    .ignoresSafeArea()
             }
         }
     }
+    
+    var body: some View {
+        ZStack {
+            // 应用背景视图
+            backgroundView
+            
+            NavigationView {
+                VStack(spacing: 0) {
+                    List {
+                        ForEach(sortedCategoryKeys, id: \.self) { categoryKey in
+                            Section {
+                                VStack(spacing: 0) {
+                                    Button(action: {
+                                        // 移除了动画效果
+                                        toggleCategory(categoryKey)
+                                    }) {
+                                        HStack {
+                                            // 保持原有的内容
+                                            Text("\(tweaks.filter { $0.category == categoryKey }.count)")
+                                                .font(.caption)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(.white)
+                                                .frame(width: 24, height: 24)
+                                                .background(
+                                                    Circle()
+                                                        .fill(appAccentColor)
+                                                )
+                                                .padding(.trailing, 6)
+                                            
+                                            Image(systemName: iconForCategory(categoryKey))
+                                                .font(.headline)
+                                                .foregroundColor(appAccentColor)
+                                                .frame(width: 30)
+                                            
+                                            Text(categoryKey)
+                                                .font(.title3.weight(.semibold))
+                                                .foregroundColor(.primary)
+                                            
+                                            Spacer()
+                                            
+                                            Image(systemName: expandedCategories.contains(categoryKey) ? "chevron.up" : "chevron.down")
+                                                .font(.footnote.weight(.semibold))
+                                                .foregroundColor(.secondary)
+                                                .padding(8)
+                                                .background(
+                                                    Circle()
+                                                        .fill(Color(UIColor.systemBackground))
+                                                        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                                                )
+                                        }
+                                        .padding(.vertical, 5)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    
+                                    if expandedCategories.contains(categoryKey) {
+                                        let indicesForCategory = tweaks.indices.filter { tweaks[$0].category == categoryKey }
+                                        
+                                        VStack(spacing: 0) {
+                                            ForEach(indicesForCategory, id: \.self) { indexInMainArray in
+                                                TweakRowView(
+                                                    tweak: $tweaks[indexInMainArray],
+                                                    isGloballyProcessing: $isAnyTweakProcessing,
+                                                    action: {
+                                                        self.applyTweak(id: tweaks[indexInMainArray].id)
+                                                    }
+                                                )
+                                                .padding(.vertical, 8)
+                                                
+                                                if indexInMainArray != indicesForCategory.last {
+                                                    Divider()
+                                                        .padding(.leading, 8)
+                                                }
+                                            }
+                                        }
+                                        .padding(.leading, 12)
+                                        .padding(.top, 8)
+                                        .background(Color(UIColor.secondarySystemBackground).opacity(0.5))
+                                        .cornerRadius(12)
+                                        .padding(.vertical, 8)
+                                        .transition(.move(edge: .top).combined(with: .opacity))
+                                    }
+                                }
+                            } footer: {
+                                if categoryKey == "声音" {
+                                    Text("注意：在某些地区，静音相机快门声音可能会有法律或社会影响。请注意当地习俗。")
+                                        .font(.caption2)
+                                        .foregroundColor(.orange)
+                                        .padding(.vertical, 5)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                if categoryKey == sortedCategoryKeys.last {
+                                    Text("更改生效需要手动重启/重新开机。请谨慎使用。")
+                                        .font(.caption2)
+                                        .foregroundColor(.gray)
+                                        .padding(.vertical, 10)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                }
+                            }
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                    
+                    LogView(logMessages: $logStore.messages, logStore: logStore)
+                        .padding(.horizontal)
+                        .padding(.bottom, 5)
+                        .padding(.top, 8)
+                }
+                .navigationTitle("iOS Tweak Tool (PoC)")
+                .toolbar {
+                    ToolbarItemGroup(placement: .navigationBarLeading) {
+                        Button {
+                            self.alertItem = AlertItem(
+                                title: Text("确认重启"),
+                                message: Text("这将尝试使用CFNotification进行重启。它可能不适用于所有iOS版本。继续？"),
+                                primaryButton: .destructive(Text("尝试重启")) {
+                                    triggerCFNotificationRespring()
+                                },
+                                secondaryButton: .cancel()
+                            )
+                        } label: {
+                            Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
+                        }
+                        .disabled(isRespringProcessing || isAnyTweakProcessing || tweaks.contains(where: {$0.isProcessing}))
+                        
+                        Button {
+                            showColorPicker = true
+                        } label: {
+                            Image(systemName: "paintpalette.fill")
+                                .foregroundColor(appAccentColor)
+                        }
+                        .disabled(isRespringProcessing || isAnyTweakProcessing || tweaks.contains(where: {$0.isProcessing}))
+                    }
+                }
+                .alert(item: $alertItem) { item in
+                    Alert(title: item.title, message: item.message, primaryButton: item.primaryButton, secondaryButton: item.secondaryButton ?? .cancel())
+                }
+                .onAppear {
+                    exploitManager.logStore = self.logStore
+                    loadThemeSettings()
+                }
+            }
+            .accentColor(appAccentColor)
+            .sheet(isPresented: $showColorPicker) {
+                NavigationView {
+                    ZStack {
+                        // 背景
+                        switch backgroundStyle {
+                        case .default:
+                            Color(.systemGroupedBackground).ignoresSafeArea()
+                        case .glass:
+                            ZStack {
+                                Color(.systemBackground).opacity(0.6)
+                                    .blur(radius: CGFloat(blurIntensity))
+                                Color.clear
+                                    .background(.ultraThinMaterial)
+                            }
+                            .ignoresSafeArea()
+                        case .ios19Glass:
+                            ZStack {
+                                Color(.systemBackground).opacity(0.5)
+                                Color(appAccentColor).opacity(0.08)
+                                Color.clear
+                                    .background(.ultraThinMaterial)
+                                    .blur(radius: CGFloat(blurIntensity/3))
+                            }
+                            .ignoresSafeArea()
+                        case .custom:
+                            customBackgroundColor.ignoresSafeArea()
+                        }
+                        
+                        // 内容
+                        ScrollView {
+                            VStack(spacing: 24) {
+                                VStack(spacing: 10) {
+                                    Text("主题颜色")
+                                        .font(.headline)
+                                    
+                                    // 预设颜色选择
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 15) {
+                                            ForEach([Color.blue, Color.purple, Color.red, Color.orange, 
+                                                    Color.green, Color.yellow, Color.pink, Color.indigo], id: \.self) { color in
+                                                Circle()
+                                                    .fill(color)
+                                                    .frame(width: 40, height: 40)
+                                                    .onTapGesture {
+                                                        appAccentColor = color
+                                                    }
+                                                    .overlay(
+                                                        Circle()
+                                                            .stroke(Color.white, lineWidth: 2)
+                                                            .opacity(appAccentColor.description == color.description ? 1 : 0)
+                                                    )
+                                                    .shadow(color: color.opacity(0.3), radius: 3, x: 0, y: 2)
+                                            }
+                                        }
+                                        .padding(.horizontal)
+                                    }
+                                    
+                                    // 自定义颜色选择器
+                                    ColorPicker("自定义颜色", selection: $appAccentColor, supportsOpacity: false)
+                                        .padding()
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color(.secondarySystemBackground))
+                                        )
+                                        .padding(.horizontal)
+                                }
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color(.secondarySystemBackground).opacity(0.7))
+                                )
+                                .padding(.horizontal)
+                                
+                                // 背景样式选择
+                                VStack(spacing: 16) {
+                                    Text("背景样式")
+                                        .font(.headline)
+                                    
+                                    Picker("背景样式", selection: $backgroundStyle) {
+                                        ForEach(BackgroundStyle.allCases) { style in
+                                            Text(style.rawValue).tag(style)
+                                        }
+                                    }
+                                    .pickerStyle(SegmentedPickerStyle())
+                                    .padding(.horizontal)
+                                    
+                                    // 根据选择的背景样式显示相应的设置选项
+                                    if backgroundStyle == .glass || backgroundStyle == .ios19Glass {
+                                        VStack(alignment: .leading, spacing: 10) {
+                                            Text("毛玻璃效果强度: \(Int(blurIntensity))")
+                                                .font(.subheadline)
+                                            
+                                            Slider(value: $blurIntensity, in: 0...40, step: 1)
+                                                .accentColor(appAccentColor)
+                                        }
+                                        .padding(.horizontal)
+                                        .padding(.top, 5)
+                                    }
+                                    
+                                    if backgroundStyle == .custom {
+                                        ColorPicker("背景颜色", selection: $customBackgroundColor)
+                                            .padding()
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .fill(Color(.tertiarySystemBackground))
+                                            )
+                                            .padding(.horizontal)
+                                    }
+                                }
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color(.secondarySystemBackground).opacity(0.7))
+                                )
+                                .padding(.horizontal)
+                                
+                                // 预览区域
+                                VStack(spacing: 16) {
+                                    Text("效果预览")
+                                        .font(.headline)
+                                    
+                                    // 按钮预览
+                                    VStack(spacing: 20) {
+                                        HStack(spacing: 20) {
+                                            Button("按钮") { }
+                                                .buttonStyle(.borderedProminent)
+                                                .tint(appAccentColor)
+                                            
+                                            Text("← 系统按钮样式")
+                                                .font(.callout)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        
+                                        HStack(spacing: 20) {
+                                            Toggle("开关", isOn: .constant(true))
+                                                .toggleStyle(SwitchToggleStyle(tint: appAccentColor))
+                                            
+                                            Text("← 系统开关状态")
+                                                .font(.callout)
+                                                .foregroundColor(.secondary)
+                                        }
+                                        
+                                        HStack(spacing: 20) {
+                                            ProgressView()
+                                                .progressViewStyle(CircularProgressViewStyle(tint: appAccentColor))
+                                                .scaleEffect(1.2)
+                                            
+                                            Text("← 加载指示器")
+                                                .font(.callout)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    .padding()
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(.tertiarySystemBackground).opacity(0.7))
+                                    )
+                                    .padding(.horizontal)
+                                }
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color(.secondarySystemBackground).opacity(0.7))
+                                )
+                                .padding(.horizontal)
+                                
+                                Text("选择的设置将应用于整个应用。背景样式会立即生效，切换后可获得不同视觉效果。")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 30)
+                                    .padding(.top, 10)
+                            }
+                            .padding(.top, 20)
+                            .padding(.bottom, 40)
+                        }
+                    }
+                    .navigationBarItems(trailing: 
+                        Button("完成") {
+                            showColorPicker = false
+                            saveThemeSettings()
+                        }
+                    )
+                    .navigationTitle("主题设置")
+                    .navigationBarTitleDisplayMode(.inline)
+                }
+            }
+        }
+    }
+}
+
+enum BackgroundStyle: String, CaseIterable, Identifiable {
+    case `default` = "默认"
+    case glass = "毛玻璃"
+    case ios19Glass = "iOS 19风格"
+    case custom = "自定义颜色"
+    
+    var id: String { self.rawValue }
 }
 
 #Preview {
