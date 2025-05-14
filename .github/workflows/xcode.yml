@@ -91,19 +91,19 @@ jobs:
           path: ${{ runner.temp }}/build/*.ipa
 
   build_unsigned:
-    name: Build Unsigned IPA
+    name: 构建未签名IPA
     runs-on: macos-latest
 
     steps:
-      - name: Checkout
+      - name: 检出代码
         uses: actions/checkout@v4
       
-      - name: Setup Xcode
+      - name: 设置Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
       
-      - name: Create Export Options Plist
+      - name: 创建导出选项Plist
         run: |
           cat > exportOptions.plist << EOL
           <?xml version="1.0" encoding="UTF-8"?>
@@ -120,7 +120,7 @@ jobs:
           </plist>
           EOL
       
-      - name: Build and Archive
+      - name: 构建与归档
         run: |
           cd mdcX_ZH
           xcodebuild clean archive \
@@ -133,7 +133,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             IPHONEOS_DEPLOYMENT_TARGET=16.0
       
-      - name: Package IPA
+      - name: 打包IPA
         run: |
           # 创建IPA结构
           mkdir -p $RUNNER_TEMP/build/Payload
@@ -141,28 +141,28 @@ jobs:
           cd $RUNNER_TEMP/build
           zip -r mdcX.ipa Payload
       
-      - name: Upload IPA
+      - name: 上传IPA
         uses: actions/upload-artifact@v4
         with:
-          name: mdcX-unsigned-app
+          name: mdcX-未签名应用
           path: ${{ runner.temp }}/build/mdcX.ipa
 
   check:
-    name: Swift Syntax Check
+    name: Swift语法检查
     runs-on: macos-latest
 
     steps:
-      - name: Checkout
+      - name: 检出代码
         uses: actions/checkout@v4
       
-      - name: Environment Info
+      - name: 环境信息
         run: |
           swift --version
-          echo "Repository structure:"
+          echo "代码库结构:"
           find . -name "*.swift" | wc -l
-          echo "Swift files found."
+          echo "找到的Swift文件数量."
       
-      - name: Swift Syntax Check
+      - name: Swift语法检查
         run: |
           # 简单语法检查而不是构建
           find mdcX_ZH -name "*.swift" -print0 | xargs -0 -n1 swift -syntax-only || true
