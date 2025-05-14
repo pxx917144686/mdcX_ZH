@@ -424,3 +424,17 @@ struct FilePathsList: View {
         }
     }
 }
+
+// 在ContentView中添加公共方法
+extension ContentView {
+    public func publicGetTweaks() -> [Tweak] {
+        return tweaks
+    }
+}
+
+// 在PresetManager中添加公共方法
+extension PresetManager {
+    public func publicColorToString(_ color: Color) -> String {
+        return colorToString(color)
+    }
+}
