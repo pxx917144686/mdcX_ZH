@@ -90,6 +90,63 @@ jobs:
           name: mdcX-app
           path: ${{ runner.temp }}/build/*.ipa
 
+  build_unsigned:
+    name: Build Unsigned IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      
+      - name: Create Export Options Plist
+        run: |
+          cat > exportOptions.plist << EOL
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>development</string>
+              <key>compileBitcode</key>
+              <false/>
+              <key>signingStyle</key>
+              <string>manual</string>
+          </dict>
+          </plist>
+          EOL
+      
+      - name: Build and Archive
+        run: |
+          cd mdcX_ZH
+          xcodebuild clean archive \
+            -project mdcX.xcodeproj \
+            -scheme mdcX \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/mdcX.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=16.0
+      
+      - name: Package IPA
+        run: |
+          # 创建IPA结构
+          mkdir -p $RUNNER_TEMP/build/Payload
+          cp -r $RUNNER_TEMP/mdcX.xcarchive/Products/Applications/mdcX.app $RUNNER_TEMP/build/Payload/
+          cd $RUNNER_TEMP/build
+          zip -r mdcX.ipa Payload
+      
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: mdcX-unsigned-app
+          path: ${{ runner.temp }}/build/mdcX.ipa
+
   check:
     name: Swift Syntax Check
     runs-on: macos-latest
